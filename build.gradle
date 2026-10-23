@@ -24,6 +24,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-cache-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'

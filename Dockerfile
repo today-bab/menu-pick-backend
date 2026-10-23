@@ -18,7 +18,8 @@ COPY --from=builder /workspace/extracted/spring-boot-loader/ ./
 COPY --from=builder /workspace/extracted/snapshot-dependencies/ ./
 COPY --from=builder /workspace/extracted/application/ ./
 USER 1001
-EXPOSE 8080
+# 8080: 서비스, 8081: 관리(헬스 체크·지표)
+EXPOSE 8080 8081
 # 컨테이너 메모리 한도에 맞춰 힙 크기를 정한다
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
 ENTRYPOINT ["java", "-jar", "application.jar"]
