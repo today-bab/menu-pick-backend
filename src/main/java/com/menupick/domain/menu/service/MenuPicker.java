@@ -1,6 +1,7 @@
 package com.menupick.domain.menu.service;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomGenerator;
 
 import org.jspecify.annotations.Nullable;
@@ -18,8 +19,12 @@ public class MenuPicker {
 
 	private final RandomGenerator random;
 
+	/**
+	 * 여러 요청이 동시에 쓰므로 스레드마다 따로 동작하는 {@link ThreadLocalRandom}을 쓴다.
+	 * ({@code RandomGenerator.getDefault()}는 스레드 안전하지 않고, jdk.random 모듈이 없는 JRE에서는 만들 수도 없다.)
+	 */
 	public MenuPicker() {
-		this(RandomGenerator.getDefault());
+		this(ThreadLocalRandom.current());
 	}
 
 	MenuPicker(RandomGenerator random) {
