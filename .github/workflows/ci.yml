@@ -48,3 +48,33 @@ jobs:
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # gitops 저장소의 이미지 태그를 바꾸면 Argo CD가 새 이미지로 배포한다
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    # 연달아 push돼도 태그 갱신 커밋이 서로 부딪히지 않게 한 번에 하나씩
+    concurrency: gitops-deploy
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: today-bab/menu-pick-gitops
+          # menu-pick-gitops에만 쓸 수 있는 deploy key
+          ssh-key: ${{ secrets.GITOPS_DEPLOY_KEY }}
+      - name: 이미지 태그 갱신
+        env:
+          TAG: ${{ github.sha }}
+        run: |
+          yq -i '(.images[] | select(.name == "${{ env.IMAGE }}")).newTag = strenv(TAG)' \
+            services/menu-pick-backend/kustomization.yaml
+      - name: 커밋·push
+        run: |
+          if git diff --quiet; then
+            echo "이미 같은 태그라 커밋하지 않음"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "deploy: menu-pick-backend ${GITHUB_SHA::7}" \
+            -m "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          git push
