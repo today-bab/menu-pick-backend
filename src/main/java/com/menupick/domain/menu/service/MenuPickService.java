@@ -17,10 +17,13 @@ public class MenuPickService {
 
 	private final RestaurantClient restaurantClient;
 	private final MenuPicker menuPicker;
+	private final RestaurantSampler restaurantSampler;
 
-	public MenuPickService(RestaurantClient restaurantClient, MenuPicker menuPicker) {
+	public MenuPickService(RestaurantClient restaurantClient, MenuPicker menuPicker,
+			RestaurantSampler restaurantSampler) {
 		this.restaurantClient = restaurantClient;
 		this.menuPicker = menuPicker;
+		this.restaurantSampler = restaurantSampler;
 	}
 
 	/**
@@ -32,7 +35,8 @@ public class MenuPickService {
 		if (candidates.isEmpty()) {
 			throw new NoNearbyRestaurantException(coordinate);
 		}
-		return menuPicker.pick(candidates, excludedMenu);
+		MenuPick pick = menuPicker.pick(candidates, excludedMenu);
+		return new MenuPick(pick.menu(), restaurantSampler.sample(pick.restaurants()));
 	}
 
 }

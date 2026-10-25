@@ -24,7 +24,8 @@ class MenuPickServiceTest {
 	void 근처_음식점에서_직전_메뉴를_빼고_뽑는다() {
 		Restaurant pyongyang = restaurant("평양면옥", "냉면");
 		Restaurant katsu = restaurant("카츠정", "돈까스");
-		MenuPickService service = new MenuPickService(coordinate -> List.of(pyongyang, katsu), new MenuPicker());
+		MenuPickService service = new MenuPickService(coordinate -> List.of(pyongyang, katsu), new MenuPicker(),
+				new RestaurantSampler());
 
 		MenuPick pick = service.pick(HERE, "냉면");
 
@@ -33,7 +34,8 @@ class MenuPickServiceTest {
 
 	@Test
 	void 근처에_음식점이_없으면_뽑을_수_없다() {
-		MenuPickService service = new MenuPickService(coordinate -> List.of(), new MenuPicker());
+		MenuPickService service = new MenuPickService(coordinate -> List.of(), new MenuPicker(),
+				new RestaurantSampler());
 
 		assertThatExceptionOfType(NoNearbyRestaurantException.class)
 				.isThrownBy(() -> service.pick(HERE, null));
