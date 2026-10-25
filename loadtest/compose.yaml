@@ -1,0 +1,56 @@
+# 부하 테스트 환경. 운영(k8s)과 같은 구성을 로컬에 띄우되 카카오만 가짜(WireMock)로 바꾼다.
+#
+#   k6 ─▶ backend-1 ─┐
+#     └─▶ backend-2 ─┼─▶ valkey (공유 캐시)
+#                    └─▶ kakao (가짜 카카오, 응답 지연 150ms)
+#
+# 실행은 run.sh가 한다. 직접 띄울 때: docker compose -f loadtest/compose.yaml up -d --build
+name: menu-pick-loadtest
+
+x-backend: &backend
+  image: menu-pick-backend:loadtest
+  environment:
+    KAKAO_REST_KEY: fake-key
+    KAKAO_BASE_URL: http://kakao:8080
+    SPRING_DATA_REDIS_HOST: valkey
+  # 운영 Pod의 메모리 한도와 같게 둔다
+  mem_limit: 512m
+  depends_on: [valkey, kakao]
+
+services:
+  valkey:
+    # 운영(services/menu-pick-valkey)과 같은 이미지·설정
+    image: valkey/valkey:9.1.2-alpine
+    command: [valkey-server, --save, "", --appendonly, "no", --maxmemory, 48mb, --maxmemory-policy, allkeys-lru]
+    ports:
+      - "16379:6379"
+
+  kakao:
+    image: wiremock/wiremock:3.13.2
+    volumes:
+      - ./wiremock:/home/wiremock:ro
+    ports:
+      # 관리 API(/__admin)로 받은 요청 수를 센다
+      - "18089:8080"
+
+  backend-1:
+    <<: *backend
+    build:
+      context: ..
+    ports:
+      - "18080:8080"
+      - "18081:8081"
+
+  backend-2:
+    <<: *backend
+    ports:
+      - "28080:8080"
+      - "28081:8081"
+
+  k6:
+    image: grafana/k6:2.2.0
+    profiles: [k6]
+    volumes:
+      - ./k6:/scripts:ro
+      - ./results:/results
+    working_dir: /scripts
