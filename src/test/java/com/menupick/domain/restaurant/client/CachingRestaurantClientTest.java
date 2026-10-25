@@ -64,4 +64,44 @@ class CachingRestaurantClientTest {
 				.isSameAs(failure);
 	}
 
+	/** Valkey가 내려간 상황처럼 조회·저장이 모두 실패하는 캐시. */
+	private static class BrokenCache extends ConcurrentMapCache {
+
+		BrokenCache() {
+			super(CachingRestaurantClient.CACHE_NAME);
+		}
+
+		@Override
+		public ValueWrapper get(Object key) {
+			throw new IllegalStateException("캐시 연결 실패");
+		}
+
+		@Override
+		public void put(Object key, Object value) {
+			throw new IllegalStateException("캐시 연결 실패");
+		}
+
+	}
+
+	@Test
+	void 캐시가_실패해도_원래_클라이언트로_조회한다() {
+		CachingRestaurantClient broken = new CachingRestaurantClient(delegate, new BrokenCache());
+
+		assertThat(broken.findNearby(new Coordinate(37.5665, 126.978))).containsExactly(PYONGYANG);
+		assertThat(delegate.requested).hasSize(1);
+	}
+
+	@Test
+	void 캐시_저장만_실패해도_조회_결과를_돌려준다() {
+		CachingRestaurantClient putFailing = new CachingRestaurantClient(delegate,
+				new ConcurrentMapCache(CachingRestaurantClient.CACHE_NAME) {
+					@Override
+					public void put(Object key, Object value) {
+						throw new IllegalStateException("캐시 저장 실패");
+					}
+				});
+
+		assertThat(putFailing.findNearby(new Coordinate(37.5665, 126.978))).containsExactly(PYONGYANG);
+	}
+
 }
