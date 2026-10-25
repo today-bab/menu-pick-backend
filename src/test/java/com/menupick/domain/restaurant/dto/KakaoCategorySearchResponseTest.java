@@ -37,8 +37,24 @@ class KakaoCategorySearchResponseTest {
 			"음식점 > 치킨 > BBQ                   | 치킨",
 			"음식점 > 분식 > 김가네                | 분식",
 			"음식점 > 샐러드 > 그리너              | 샐러드",
+			"음식점 > 샤브샤브 > 등촌샤브칼국수    | 샤브샤브",
+			"음식점 > 패밀리레스토랑 > 빕스        | 패밀리레스토랑",
+			"음식점 > 도시락 > 본도시락            | 도시락",
+			"음식점 > 구내식당                     | 구내식당",
+			"음식점 > 간식 > 제과,베이커리         | 제과,베이커리",
 	})
 	void 분류에서_브랜드를_뺀_중분류까지를_메뉴로_본다(String categoryName, String menu) {
+		assertThat(document(categoryName).toRestaurant().menu()).isEqualTo(menu);
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiter = '|', value = {
+			"음식점 > 중식                         | 중식",
+			"음식점 > 중식 > 중국요리              | 중식",
+			"음식점 > 일식                         | 일식",
+			"음식점 > 일식 > 일식집                | 일식",
+	})
+	void 분류_깊이만_다른_같은_메뉴는_한_이름으로_합친다(String categoryName, String menu) {
 		assertThat(document(categoryName).toRestaurant().menu()).isEqualTo(menu);
 	}
 

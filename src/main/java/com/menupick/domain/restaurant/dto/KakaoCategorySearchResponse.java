@@ -2,6 +2,7 @@ package com.menupick.domain.restaurant.dto;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -42,7 +43,16 @@ public record KakaoCategorySearchResponse(Meta meta, List<Document> documents) {
 		private static final int MENU_LEVEL = 2;
 
 		/** 중분류 자리에 브랜드가 오는 대분류 (예: 패스트푸드 > 맥도날드, 치킨 > BBQ). 이때는 대분류를 쓴다. */
-		private static final Set<String> BRAND_AT_MENU_LEVEL = Set.of("분식", "패스트푸드", "치킨", "샐러드");
+		private static final Set<String> BRAND_AT_MENU_LEVEL = Set.of(
+				"분식", "패스트푸드", "치킨", "샐러드", "샤브샤브", "패밀리레스토랑", "도시락");
+
+		/**
+		 * 같은 메뉴인데 분류 깊이에 따라 이름이 달라지는 것을 하나로 합친다.
+		 * 예: 중분류 없이 "음식점 > 중식"인 가게와 "음식점 > 중식 > 중국요리"인 가게는 모두 "중식"
+		 */
+		private static final Map<String, String> MENU_ALIASES = Map.of(
+				"중국요리", "중식",
+				"일식집", "일식");
 
 		public Restaurant toRestaurant() {
 			return new Restaurant(
@@ -65,7 +75,7 @@ public record KakaoCategorySearchResponse(Meta meta, List<Document> documents) {
 			if (level == MENU_LEVEL && BRAND_AT_MENU_LEVEL.contains(levels[level - 1])) {
 				level--;
 			}
-			return levels[level];
+			return MENU_ALIASES.getOrDefault(levels[level], levels[level]);
 		}
 
 	}
