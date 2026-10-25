@@ -13,7 +13,7 @@ import com.menupick.domain.restaurant.model.Restaurant;
 class KakaoCategorySearchResponseTest {
 
 	private static Document document(String categoryName) {
-		return new Document("평양면옥", categoryName, "210", "127.001", "37.502",
+		return new Document("1", "평양면옥", categoryName, "210", "127.001", "37.502",
 				"http://place.map.kakao.com/123");
 	}
 

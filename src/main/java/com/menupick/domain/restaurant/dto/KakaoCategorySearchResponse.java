@@ -23,9 +23,12 @@ public record KakaoCategorySearchResponse(Meta meta, List<Document> documents) {
 
 	/**
 	 * 장소 하나. 카카오는 좌표와 거리를 문자열로 준다.
+	 *
+	 * @param id 카카오 장소 id (여러 구역에서 같은 가게가 나올 때 중복 제거에 쓴다)
 	 */
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public record Document(
+			String id,
 			@JsonProperty("place_name") String placeName,
 			@JsonProperty("category_name") String categoryName,
 			String distance,
