@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestClient;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 import com.menupick.domain.restaurant.client.CachingRestaurantClient;
 import com.menupick.domain.restaurant.client.KakaoRestaurantClient;
 import com.menupick.domain.restaurant.client.RestaurantClient;
@@ -26,10 +28,10 @@ public class RestaurantClientConfig {
 
 	@Bean
 	RestaurantClient restaurantClient(RestClient.Builder builder, KakaoProperties properties,
-			CacheManager cacheManager) {
+			CacheManager cacheManager, MeterRegistry meterRegistry) {
 		KakaoRestaurantClient kakao = new KakaoRestaurantClient(kakaoRestClient(builder, properties), properties);
 		return new CachingRestaurantClient(kakao,
-				Objects.requireNonNull(cacheManager.getCache(CachingRestaurantClient.CACHE_NAME)));
+				Objects.requireNonNull(cacheManager.getCache(CachingRestaurantClient.CACHE_NAME)), meterRegistry);
 	}
 
 	private static RestClient kakaoRestClient(RestClient.Builder builder, KakaoProperties properties) {

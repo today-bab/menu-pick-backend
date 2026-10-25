@@ -9,6 +9,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import com.menupick.domain.restaurant.exception.RestaurantLookupException;
 import com.menupick.domain.restaurant.model.Coordinate;
 import com.menupick.domain.restaurant.model.Restaurant;
@@ -32,8 +34,13 @@ class CachingRestaurantClientTest {
 	}
 
 	private final RecordingClient delegate = new RecordingClient();
+	private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 	private final CachingRestaurantClient client = new CachingRestaurantClient(delegate,
-			new ConcurrentMapCache(CachingRestaurantClient.CACHE_NAME));
+			new ConcurrentMapCache(CachingRestaurantClient.CACHE_NAME), meterRegistry);
+
+	private double errors(String operation) {
+		return meterRegistry.get(CachingRestaurantClient.ERRORS_METRIC).tag("operation", operation).counter().count();
+	}
 
 	@Test
 	void 같은_칸_안의_좌표는_한_번만_조회한다() {
@@ -57,7 +64,7 @@ class CachingRestaurantClientTest {
 		RestaurantLookupException failure = new RestaurantLookupException("실패", null);
 		CachingRestaurantClient failing = new CachingRestaurantClient(coordinate -> {
 			throw failure;
-		}, new ConcurrentMapCache(CachingRestaurantClient.CACHE_NAME));
+		}, new ConcurrentMapCache(CachingRestaurantClient.CACHE_NAME), meterRegistry);
 
 		assertThatExceptionOfType(RestaurantLookupException.class)
 				.isThrownBy(() -> failing.findNearby(new Coordinate(37.5665, 126.978)))
@@ -85,10 +92,20 @@ class CachingRestaurantClientTest {
 
 	@Test
 	void 캐시가_실패해도_원래_클라이언트로_조회한다() {
-		CachingRestaurantClient broken = new CachingRestaurantClient(delegate, new BrokenCache());
+		CachingRestaurantClient broken = new CachingRestaurantClient(delegate, new BrokenCache(), meterRegistry);
 
 		assertThat(broken.findNearby(new Coordinate(37.5665, 126.978))).containsExactly(PYONGYANG);
 		assertThat(delegate.requested).hasSize(1);
+		assertThat(errors("lookup")).isEqualTo(1);
+		assertThat(errors("store")).isEqualTo(1);
+	}
+
+	@Test
+	void 캐시가_정상이면_오류_지표는_0이다() {
+		client.findNearby(new Coordinate(37.5665, 126.978));
+
+		assertThat(errors("lookup")).isZero();
+		assertThat(errors("store")).isZero();
 	}
 
 	@Test
@@ -99,7 +116,7 @@ class CachingRestaurantClientTest {
 					public void put(Object key, Object value) {
 						throw new IllegalStateException("캐시 저장 실패");
 					}
-				});
+				}, meterRegistry);
 
 		assertThat(putFailing.findNearby(new Coordinate(37.5665, 126.978))).containsExactly(PYONGYANG);
 	}

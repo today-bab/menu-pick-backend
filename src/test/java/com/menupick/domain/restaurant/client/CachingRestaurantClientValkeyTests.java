@@ -19,6 +19,8 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 import com.menupick.domain.restaurant.model.Coordinate;
 import com.menupick.domain.restaurant.model.Restaurant;
 
@@ -58,7 +60,8 @@ class CachingRestaurantClientValkeyTests {
 			return List.of(PYONGYANG);
 		};
 		client = new CachingRestaurantClient(delegate,
-				Objects.requireNonNull(cacheManager.getCache(CachingRestaurantClient.CACHE_NAME)));
+				Objects.requireNonNull(cacheManager.getCache(CachingRestaurantClient.CACHE_NAME)),
+				new SimpleMeterRegistry());
 	}
 
 	@Test
