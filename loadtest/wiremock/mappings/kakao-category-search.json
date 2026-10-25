@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/v2/local/search/category.json",
+    "queryParameters": {
+      "category_group_code": { "equalTo": "FD6" }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json;charset=UTF-8" },
+    "bodyFileName": "kakao-category-page.json",
+    "transformers": ["response-template"],
+    "fixedDelayMilliseconds": 150
+  }
+}
