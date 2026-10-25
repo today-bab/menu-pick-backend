@@ -16,6 +16,7 @@ cp .env.example .env   # KAKAO_REST_KEY 채우기
 | ---------------------- | ------------------------------------- | ----------------------- |
 | `KAKAO_REST_KEY`       | 카카오 REST API 키 (필수)             | 없음                    |
 | `CORS_ALLOWED_ORIGINS` | API를 호출할 프론트엔드 주소 (쉼표 구분) | `http://localhost:5173` |
+| `SPRING_DATA_REDIS_HOST` | 캐시용 Valkey(Redis 호환) 주소. 없어도 캐시 없이 동작 | `localhost` |
 
 ## API
 
@@ -56,9 +57,21 @@ com.menupick
 
 음식점 조회는 `RestaurantClient` 인터페이스 뒤에 카카오 구현(`KakaoRestaurantClient`)과
 캐시(`CachingRestaurantClient`, 약 100m 칸 단위로 10분)를 겹쳐 둔다.
+캐시는 Valkey에 JSON으로 저장해 여러 인스턴스가 함께 쓰고, Valkey에 문제가 생기면 캐시 없이 카카오를 부른다.
 
 ## 테스트
 
 ```sh
 ./gradlew test
 ```
+
+Valkey 통합 테스트(`CachingRestaurantClientValkeyTests`)는 Testcontainers를 쓰므로 Docker가 없으면 건너뛴다.
+
+## 부하 테스트
+
+가짜 카카오(WireMock)와 k6로 캐시 효과를 잰다. 실행 방법과 결과는 [`loadtest/README.md`](loadtest/README.md).
+
+| 시나리오 | p95 | 카카오 호출 (요청 901건) |
+| --- | ---: | ---: |
+| 캐시 미스 | 467ms | 2703 |
+| 캐시 적중 | 7ms | 42 |
