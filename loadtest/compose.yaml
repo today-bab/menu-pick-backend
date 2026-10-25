@@ -21,7 +21,7 @@ services:
   valkey:
     # 운영(services/menu-pick-valkey)과 같은 이미지·설정
     image: valkey/valkey:9.1.2-alpine
-    command: [valkey-server, --save, "", --appendonly, "no", --maxmemory, 48mb, --maxmemory-policy, allkeys-lru]
+    command: [valkey-server, --save, "", --appendonly, "no", --maxmemory, 128mb, --maxmemory-policy, allkeys-lru]
     ports:
       - "16379:6379"
 
