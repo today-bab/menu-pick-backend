@@ -22,6 +22,26 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew test
+      # 테스트별 결과(통과·실패·건너뜀)를 실행 요약에 표로 남기고, 실패한 테스트는 코드 줄에 표시한다.
+      # Docker가 필요한 Valkey 통합 테스트가 건너뛰어지지 않았는지도 여기서 확인한다
+      - name: 테스트 결과 요약
+        if: ${{ !cancelled() }}
+        uses: mikepenz/action-junit-report@v6
+        with:
+          report_paths: build/test-results/test/TEST-*.xml
+          # check run을 따로 만들지 않아 checks 쓰기 권한이 필요 없다
+          annotate_only: true
+          detailed_summary: true
+          include_passed: true
+          include_skipped: true
+          require_tests: true
+      - name: 테스트 HTML 리포트 올리기
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: build/reports/tests/test
+          retention-days: 7
 
   # main에 push되면 커밋 SHA를 태그로 이미지를 올린다
   image:
