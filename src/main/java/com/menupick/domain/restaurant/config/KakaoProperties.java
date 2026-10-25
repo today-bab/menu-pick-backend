@@ -19,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
  * @param readTimeout 응답 타임아웃
  * @param radiusMeters 검색 반경 (카카오 최대 20km)
  * @param maxPages 조회할 최대 페이지 수 (페이지당 15곳, 카카오 최대 3페이지)
+ * @param gridSize 반경을 나눌 구역 수 (한 변 기준, 3이면 9구역). 구역마다 최대 45곳을 받는다
  */
 @Validated
 @ConfigurationProperties("kakao")
@@ -28,5 +29,6 @@ public record KakaoProperties(
 		@NotNull Duration connectTimeout,
 		@NotNull Duration readTimeout,
 		@Min(1) @Max(20_000) int radiusMeters,
-		@Min(1) @Max(3) int maxPages) {
+		@Min(1) @Max(3) int maxPages,
+		@Min(1) @Max(5) int gridSize) {
 }

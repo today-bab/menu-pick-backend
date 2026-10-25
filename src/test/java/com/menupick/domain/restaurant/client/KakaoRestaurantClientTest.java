@@ -40,7 +40,7 @@ class KakaoRestaurantClientTest {
 
 	private KakaoRestaurantClient client(int maxPages) {
 		KakaoProperties properties = new KakaoProperties("test-key", BASE_URL, Duration.ofSeconds(1),
-				Duration.ofSeconds(1), 1000, maxPages);
+				Duration.ofSeconds(1), 1000, maxPages, 1);
 		return new KakaoRestaurantClient(restClient, properties);
 	}
 
