@@ -67,6 +67,10 @@ class CachingRestaurantClientLockTest {
 		return new CachingRestaurantClient(delegate, cache, lock, waitTimeout, Duration.ofMillis(10), meterRegistry);
 	}
 
+	private double misses(String outcome) {
+		return meterRegistry.get(CachingRestaurantClient.MISSES_METRIC).tag("outcome", outcome).counter().count();
+	}
+
 	/** {@code delayMillis} 뒤에 다른 곳에서 할 일을 실행한다. */
 	private static void later(long delayMillis, Runnable action) {
 		Thread.ofVirtual().start(() -> {
@@ -88,6 +92,7 @@ class CachingRestaurantClientLockTest {
 		assertThat(calls).hasValue(1);
 		// 저장이 비동기로 끝나기 전에 다른 곳이 락을 잡지 않도록 풀지 않는다
 		assertThat(lock.isHeld(CELL)).isTrue();
+		assertThat(misses("loaded")).isEqualTo(1);
 	}
 
 	@Test
@@ -99,6 +104,7 @@ class CachingRestaurantClientLockTest {
 
 		assertThat(found).containsExactly(PYONGYANG);
 		assertThat(calls).hasValue(0);
+		assertThat(misses("waited")).isEqualTo(1);
 	}
 
 	@Test
@@ -109,6 +115,7 @@ class CachingRestaurantClientLockTest {
 
 		assertThat(found).containsExactly(PYONGYANG);
 		assertThat(calls).hasValue(1);
+		assertThat(misses("timeout")).isEqualTo(1);
 	}
 
 	@Test

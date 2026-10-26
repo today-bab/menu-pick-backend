@@ -52,6 +52,7 @@ class HealthEndpointTests {
 				.body(String.class);
 
 		assertThat(metrics).contains("jvm_memory_used_bytes", "cache_gets_total", "restaurant_cache_errors_total",
+				"restaurant_cache_misses_total",
 				"application=\"menu-pick-backend\"");
 	}
 

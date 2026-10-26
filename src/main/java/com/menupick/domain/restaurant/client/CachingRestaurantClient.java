@@ -33,6 +33,13 @@ public class CachingRestaurantClient implements RestaurantClient {
 
 	public static final String ERRORS_METRIC = "restaurant.cache.errors";
 
+	/**
+	 * 캐시 미스를 어떻게 처리했는지 센다. 태그 {@code outcome}:
+	 * {@code loaded}(락을 잡고 원본 조회), {@code waited}(다른 곳이 채운 값을 기다려 씀),
+	 * {@code timeout}(기다리다 포기하고 원본 조회)
+	 */
+	public static final String MISSES_METRIC = "restaurant.cache.misses";
+
 	private static final Logger log = LoggerFactory.getLogger(CachingRestaurantClient.class);
 
 	private static final double CELL_SCALE = 1_000;
@@ -48,6 +55,9 @@ public class CachingRestaurantClient implements RestaurantClient {
 	private final Counter lookupErrors;
 	private final Counter storeErrors;
 	private final Counter lockErrors;
+	private final Counter loadedMisses;
+	private final Counter waitedMisses;
+	private final Counter timedOutMisses;
 
 	/** 락 없이, 캐시 미스마다 바로 원본을 조회한다. */
 	public CachingRestaurantClient(RestaurantClient delegate, Cache cache, MeterRegistry meterRegistry) {
@@ -69,6 +79,17 @@ public class CachingRestaurantClient implements RestaurantClient {
 		this.lookupErrors = errorCounter(meterRegistry, "lookup");
 		this.storeErrors = errorCounter(meterRegistry, "store");
 		this.lockErrors = errorCounter(meterRegistry, "lock");
+		this.loadedMisses = missCounter(meterRegistry, "loaded");
+		this.waitedMisses = missCounter(meterRegistry, "waited");
+		this.timedOutMisses = missCounter(meterRegistry, "timeout");
+	}
+
+	private static Counter missCounter(MeterRegistry meterRegistry, String outcome) {
+		return Counter.builder(MISSES_METRIC)
+				.description("캐시 미스를 처리한 방법별 횟수")
+				.tag("cache", CACHE_NAME)
+				.tag("outcome", outcome)
+				.register(meterRegistry);
 	}
 
 	private static Counter errorCounter(MeterRegistry meterRegistry, String operation) {
@@ -95,12 +116,14 @@ public class CachingRestaurantClient implements RestaurantClient {
 			}
 			List<Restaurant> loaded = lookup(cell);
 			if (loaded != null) {
+				waitedMisses.increment();
 				return loaded;
 			}
 			// 먼저 잡은 쪽이 조회에 실패해 락을 풀었으면 이어받아 조회한다
 			token = acquire(cell);
 		}
 		// 기다려도 채워지지 않으면 락 없이 직접 조회한다
+		(token == null ? timedOutMisses : loadedMisses).increment();
 		return load(cell, token);
 	}
 
