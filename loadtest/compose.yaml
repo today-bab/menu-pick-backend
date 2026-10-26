@@ -27,6 +27,9 @@ services:
 
   kakao:
     image: wiremock/wiremock:3.13.2
+    # 캐시 미스 한 번에 최대 27번 호출하므로, 응답 지연(150ms) 동안 스레드를 붙잡지 않는 비동기 응답으로
+    # 가짜 서버가 병목이 되지 않게 한다
+    command: [--async-response-enabled=true, --async-response-threads=50, --container-threads=200]
     volumes:
       - ./wiremock:/home/wiremock:ro
     ports:
