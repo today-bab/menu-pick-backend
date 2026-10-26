@@ -1,5 +1,6 @@
 package com.menupick.domain.restaurant.config;
 
+import java.net.http.HttpClient;
 import java.util.Objects;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -40,7 +41,11 @@ public class RestaurantClientConfig {
 		return builder
 				.baseUrl(properties.baseUrl())
 				.defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK " + properties.restKey())
-				.requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
+				.requestFactory(ClientHttpRequestFactoryBuilder.jdk()
+						// 구역들을 동시에 검색하므로 HTTP/2 연결 하나에 몰리면 서버의 동시 스트림 한도를 넘어
+						// "too many concurrent streams"로 실패한다. HTTP/1.1이면 필요한 만큼 연결을 늘린다
+						.withHttpClientCustomizer(client -> client.version(HttpClient.Version.HTTP_1_1))
+						.build(settings))
 				.build();
 	}
 
