@@ -58,6 +58,7 @@ com.menupick
 음식점 조회는 `RestaurantClient` 인터페이스 뒤에 카카오 구현(`KakaoRestaurantClient`)과
 캐시(`CachingRestaurantClient`, 약 100m 칸 단위로 10분)를 겹쳐 둔다.
 캐시는 Valkey에 JSON으로 저장해 여러 인스턴스가 함께 쓰고, Valkey에 문제가 생기면 캐시 없이 카카오를 부른다.
+캐시가 빈 칸에 요청이 몰리면 Valkey 락(`CacheLoadLock`)을 잡은 한 곳만 카카오를 부르고 나머지는 결과를 기다린다.
 
 카카오는 한 번 검색에 45곳까지만 주므로, 반경을 3×3 구역(`SearchGrid`)으로 나눠 동시에 검색해 최대 405곳에서 메뉴를 고른다.
 응답에는 뽑힌 메뉴의 가게를 최대 15곳 무작위로 골라 가까운 순으로 담는다.
@@ -74,7 +75,9 @@ Valkey 통합 테스트(`CachingRestaurantClientValkeyTests`)는 Testcontainers�
 
 가짜 카카오(WireMock)와 k6로 캐시 효과를 잰다. 실행 방법과 결과는 [`loadtest/README.md`](loadtest/README.md).
 
-| 시나리오 | p95 | 카카오 호출 (요청 901건) |
+| 시나리오 | p95 | 카카오 호출 |
 | --- | ---: | ---: |
-| 캐시 미스 | 469ms | 24327 |
-| 캐시 적중 | 10ms | 405 |
+| 캐시 미스 (요청 900건) | 472ms | 24327 |
+| 캐시 적중 (요청 900건) | 8ms | 27 |
+| 같은 칸 동시 50건, 락 전 | 1634ms | 1350 |
+| 같은 칸 동시 50건, 락 후 | 490ms | 27 |
