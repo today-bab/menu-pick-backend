@@ -7,6 +7,18 @@ import org.jspecify.annotations.Nullable;
  */
 public interface CacheLoadLock {
 
+	/** 항상 잡히는 락. 락 없이 요청마다 바로 원본을 조회하게 한다 (단일 인스턴스, 테스트). */
+	CacheLoadLock NONE = new CacheLoadLock() {
+		@Override
+		public String tryAcquire(Object key) {
+			return "none";
+		}
+
+		@Override
+		public void release(Object key, String token) {
+		}
+	};
+
 	/**
 	 * @return 락을 잡았으면 풀 때 쓸 토큰, 다른 곳이 잡고 있으면 {@code null}
 	 */

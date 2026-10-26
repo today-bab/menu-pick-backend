@@ -1,5 +1,6 @@
 package com.menupick.domain.restaurant.client;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
@@ -20,8 +21,11 @@ import com.menupick.domain.restaurant.model.Restaurant;
  * 그래서 같은 칸 안에서는 다시 뽑아도 외부 API를 부르지 않는다.
  * 대신 거리는 실제 위치와 최대 수십 m 차이가 날 수 있다.
  * <p>
+ * 캐시가 빈 칸에 요청이 동시에 몰리면 {@link CacheLoadLock}을 잡은 한 곳만 원본을 조회하고,
+ * 나머지는 캐시에 값이 생길 때까지 기다린다. 너무 오래 걸리면 기다리지 않고 직접 조회한다.
+ * <p>
  * 캐시 저장소(Valkey)에 문제가 생겨도 조회는 막지 않는다. 캐시 오류는 로그와 지표
- * ({@value #ERRORS_METRIC}, 태그 {@code operation=lookup|store})만 남기고 원래 클라이언트로 조회한다.
+ * ({@value #ERRORS_METRIC}, 태그 {@code operation=lookup|store|lock})만 남기고 원래 클라이언트로 조회한다.
  */
 public class CachingRestaurantClient implements RestaurantClient {
 
@@ -33,17 +37,38 @@ public class CachingRestaurantClient implements RestaurantClient {
 
 	private static final double CELL_SCALE = 1_000;
 
+	/** 락 저장소 오류로 락 없이 조회할 때 쓰는 토큰. 실제 토큰(UUID)과 겹치지 않는다. */
+	private static final String NO_LOCK = "";
+
 	private final RestaurantClient delegate;
 	private final Cache cache;
+	private final CacheLoadLock lock;
+	private final Duration waitTimeout;
+	private final Duration pollInterval;
 	private final Counter lookupErrors;
 	private final Counter storeErrors;
+	private final Counter lockErrors;
 
+	/** 락 없이, 캐시 미스마다 바로 원본을 조회한다. */
 	public CachingRestaurantClient(RestaurantClient delegate, Cache cache, MeterRegistry meterRegistry) {
+		this(delegate, cache, CacheLoadLock.NONE, Duration.ZERO, Duration.ZERO, meterRegistry);
+	}
+
+	/**
+	 * @param waitTimeout 다른 곳이 채우기를 기다리는 최대 시간. 넘으면 직접 조회한다
+	 * @param pollInterval 기다리는 동안 캐시를 다시 확인하는 간격
+	 */
+	public CachingRestaurantClient(RestaurantClient delegate, Cache cache, CacheLoadLock lock, Duration waitTimeout,
+			Duration pollInterval, MeterRegistry meterRegistry) {
 		this.delegate = delegate;
 		this.cache = cache;
+		this.lock = lock;
+		this.waitTimeout = waitTimeout;
+		this.pollInterval = pollInterval;
 		// 오류가 없어도 0으로 지표가 보이도록 미리 등록한다
 		this.lookupErrors = errorCounter(meterRegistry, "lookup");
 		this.storeErrors = errorCounter(meterRegistry, "store");
+		this.lockErrors = errorCounter(meterRegistry, "lock");
 	}
 
 	private static Counter errorCounter(MeterRegistry meterRegistry, String operation) {
@@ -61,9 +86,75 @@ public class CachingRestaurantClient implements RestaurantClient {
 		if (cached != null) {
 			return cached;
 		}
-		List<Restaurant> found = delegate.findNearby(cell);
+
+		String token = acquire(cell);
+		long deadline = System.nanoTime() + waitTimeout.toNanos();
+		while (token == null && System.nanoTime() < deadline) {
+			if (!pause()) {
+				break;
+			}
+			List<Restaurant> loaded = lookup(cell);
+			if (loaded != null) {
+				return loaded;
+			}
+			// 먼저 잡은 쪽이 조회에 실패해 락을 풀었으면 이어받아 조회한다
+			token = acquire(cell);
+		}
+		// 기다려도 채워지지 않으면 락 없이 직접 조회한다
+		return load(cell, token);
+	}
+
+	private List<Restaurant> load(Coordinate cell, @Nullable String token) {
+		List<Restaurant> found;
+		try {
+			found = delegate.findNearby(cell);
+		}
+		catch (RuntimeException ex) {
+			release(cell, token);
+			throw ex;
+		}
 		store(cell, found);
+		// 성공하면 락을 풀지 않고 만료로 풀리게 둔다. 저장이 비동기로 끝나기 전에 풀면,
+		// 기다리던 쪽이 아직 빈 캐시를 보고 락을 잡아 같은 칸을 다시 조회할 수 있다.
 		return found;
+	}
+
+	/** @return 토큰, 다른 곳이 잡고 있으면 {@code null}, 락 저장소 오류면 {@link #NO_LOCK} */
+	private @Nullable String acquire(Coordinate cell) {
+		try {
+			return lock.tryAcquire(cell);
+		}
+		catch (RuntimeException ex) {
+			lockErrors.increment();
+			log.warn("캐시 락 실패, 락 없이 조회한다: {}", ex.toString());
+			return NO_LOCK;
+		}
+	}
+
+	private void release(Coordinate cell, @Nullable String token) {
+		if (token == null || NO_LOCK.equals(token)) {
+			return;
+		}
+		try {
+			lock.release(cell, token);
+		}
+		catch (RuntimeException ex) {
+			// 풀지 못한 락은 만료 시간이 지나면 풀린다
+			lockErrors.increment();
+			log.warn("캐시 락 해제 실패: {}", ex.toString());
+		}
+	}
+
+	/** @return 기다리는 중에 스레드가 중단되면 {@code false} */
+	private boolean pause() {
+		try {
+			Thread.sleep(pollInterval);
+			return true;
+		}
+		catch (InterruptedException ex) {
+			Thread.currentThread().interrupt();
+			return false;
+		}
 	}
 
 	@SuppressWarnings("unchecked")
