@@ -7,6 +7,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,6 +88,44 @@ class CachingRestaurantClientValkeyTests {
 
 		assertThat(redis.opsForValue().get(CELL_KEY)).contains("\"name\":\"평양면옥\"");
 		assertThat(redis.getExpire(CELL_KEY)).isBetween(1L, Duration.ofMinutes(10).toSeconds());
+	}
+
+	@Test
+	void 두_인스턴스에_같은_칸_요청이_동시에_몰려도_원본은_한_번만_조회한다() throws Exception {
+		String lockPrefix = CachingRestaurantClient.CACHE_NAME + ":lock::";
+		redis.delete(lockPrefix + new Coordinate(37.567, 126.978));
+		AtomicInteger calls = new AtomicInteger();
+		RestaurantClient slowKakao = coordinate -> {
+			calls.incrementAndGet();
+			try {
+				// 카카오 구역 검색 한 번 정도의 시간
+				Thread.sleep(300);
+			}
+			catch (InterruptedException ex) {
+				Thread.currentThread().interrupt();
+			}
+			return List.of(PYONGYANG);
+		};
+		// 운영의 Pod 2개처럼 캐시와 락만 Valkey로 함께 쓴다
+		List<CachingRestaurantClient> pods = IntStream.range(0, 2)
+				.mapToObj(i -> new CachingRestaurantClient(slowKakao,
+						Objects.requireNonNull(cacheManager.getCache(CachingRestaurantClient.CACHE_NAME)),
+						new ValkeyCacheLoadLock(redis, lockPrefix, Duration.ofSeconds(10)),
+						Duration.ofSeconds(3), Duration.ofMillis(20), new SimpleMeterRegistry()))
+				.toList();
+
+		List<Future<List<Restaurant>>> results = new ArrayList<>();
+		try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+			for (int i = 0; i < 50; i++) {
+				CachingRestaurantClient pod = pods.get(i % 2);
+				results.add(executor.submit(() -> pod.findNearby(new Coordinate(37.5665, 126.978))));
+			}
+		}
+
+		for (Future<List<Restaurant>> result : results) {
+			assertThat(result.get()).containsExactly(PYONGYANG);
+		}
+		assertThat(calls).hasValue(1);
 	}
 
 }
