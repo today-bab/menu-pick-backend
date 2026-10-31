@@ -39,6 +39,9 @@ public record KakaoCategorySearchResponse(Meta meta, List<Document> documents) {
 
 		private static final String CATEGORY_SEPARATOR = ">";
 
+		/** 대분류 단계 ("음식점 > 대분류"). */
+		private static final int CUISINE_LEVEL = 1;
+
 		/** 메뉴로 쓰는 가장 세부 단계 ("음식점 > 대분류 > 중분류"). 그 아래는 대개 브랜드다. */
 		private static final int MENU_LEVEL = 2;
 
@@ -55,22 +58,35 @@ public record KakaoCategorySearchResponse(Meta meta, List<Document> documents) {
 				"일식집", "일식");
 
 		public Restaurant toRestaurant() {
+			String[] levels = levels();
 			return new Restaurant(
 					placeName,
-					menu(),
+					cuisine(levels),
+					menu(levels),
 					Integer.parseInt(distance),
 					new Coordinate(Double.parseDouble(y), Double.parseDouble(x)),
 					placeUrl);
+		}
+
+		private String[] levels() {
+			return Arrays.stream(categoryName.split(CATEGORY_SEPARATOR))
+					.map(String::trim)
+					.toArray(String[]::new);
+		}
+
+		/**
+		 * "음식점" 바로 아래 단계를 대분류로 본다. 분류가 "음식점" 하나뿐이면 그대로 쓴다.
+		 * 예: "음식점 > 한식 > 국밥" → "한식", "음식점 > 패스트푸드 > 맥도날드" → "패스트푸드"
+		 */
+		private static String cuisine(String[] levels) {
+			return levels[Math.min(levels.length - 1, CUISINE_LEVEL)];
 		}
 
 		/**
 		 * 분류에서 브랜드를 뺀 가장 세부 단계를 메뉴로 본다.
 		 * 예: "음식점 > 한식 > 국밥 > 더진국" → "국밥", "음식점 > 패스트푸드 > 맥도날드" → "패스트푸드"
 		 */
-		private String menu() {
-			String[] levels = Arrays.stream(categoryName.split(CATEGORY_SEPARATOR))
-					.map(String::trim)
-					.toArray(String[]::new);
+		private static String menu(String[] levels) {
 			int level = Math.min(levels.length - 1, MENU_LEVEL);
 			if (level == MENU_LEVEL && BRAND_AT_MENU_LEVEL.contains(levels[level - 1])) {
 				level--;

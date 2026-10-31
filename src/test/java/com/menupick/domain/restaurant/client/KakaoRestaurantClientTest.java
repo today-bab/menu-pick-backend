@@ -85,7 +85,7 @@ class KakaoRestaurantClientTest {
 
 		List<Restaurant> restaurants = client(3, 1).findNearby(SEOUL_CITY_HALL);
 
-		assertThat(restaurants).containsExactly(new Restaurant("평양면옥", "냉면", 120,
+		assertThat(restaurants).containsExactly(new Restaurant("평양면옥", "한식", "냉면", 120,
 				new Coordinate(37.567, 126.979), "http://place.map.kakao.com/평양면옥"));
 		server.verify();
 	}

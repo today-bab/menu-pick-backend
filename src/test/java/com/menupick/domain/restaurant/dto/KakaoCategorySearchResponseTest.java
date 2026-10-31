@@ -22,7 +22,20 @@ class KakaoCategorySearchResponseTest {
 		Restaurant restaurant = document("음식점 > 한식 > 냉면 > 평양냉면").toRestaurant();
 
 		assertThat(restaurant).isEqualTo(new Restaurant(
-				"평양면옥", "냉면", 210, new Coordinate(37.502, 127.001), "http://place.map.kakao.com/123"));
+				"평양면옥", "한식", "냉면", 210, new Coordinate(37.502, 127.001), "http://place.map.kakao.com/123"));
+	}
+
+	@ParameterizedTest
+	@CsvSource(delimiter = '|', value = {
+			"음식점 > 한식 > 냉면 > 평양냉면       | 한식",
+			"음식점 > 중식 > 중국요리              | 중식",
+			"음식점 > 중식                         | 중식",
+			"음식점 > 패스트푸드 > 맥도날드        | 패스트푸드",
+			"음식점 > 간식 > 제과,베이커리         | 간식",
+			"음식점                                | 음식점",
+	})
+	void 음식점_바로_아래_단계를_대분류로_본다(String categoryName, String cuisine) {
+		assertThat(document(categoryName).toRestaurant().cuisine()).isEqualTo(cuisine);
 	}
 
 	@ParameterizedTest
