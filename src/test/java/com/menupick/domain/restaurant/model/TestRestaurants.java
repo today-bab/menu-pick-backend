@@ -12,8 +12,14 @@ public final class TestRestaurants {
 	private TestRestaurants() {
 	}
 
+	/** 좌표와 주소까지 확인하는 테스트(응답 변환 등)에서 쓴다. */
+	public static Restaurant restaurant(String name, String menu, int distanceMeters, Coordinate coordinate,
+			String placeUrl) {
+		return new Restaurant(name, menu, distanceMeters, coordinate, placeUrl);
+	}
+
 	public static Restaurant restaurant(String name, String menu, int distanceMeters) {
-		return new Restaurant(name, menu, distanceMeters, ANYWHERE, "https://place/" + name);
+		return restaurant(name, menu, distanceMeters, ANYWHERE, "https://place/" + name);
 	}
 
 	public static Restaurant restaurant(String name, String menu) {

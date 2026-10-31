@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.util.List;
 
@@ -35,7 +36,7 @@ class MenuPickControllerTest {
 
 	@Test
 	void 뽑힌_메뉴와_음식점을_돌려준다() {
-		Restaurant pyongyang = new Restaurant("평양면옥", "냉면", 210, new Coordinate(37.567, 126.979),
+		Restaurant pyongyang = restaurant("평양면옥", "냉면", 210, new Coordinate(37.567, 126.979),
 				"http://place.map.kakao.com/1");
 		given(menuPickService.pick(HERE, "돈까스")).willReturn(new MenuPick("냉면", List.of(pyongyang)));
 
