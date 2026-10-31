@@ -1,0 +1,37 @@
+name: 버그
+description: 기대와 다르게 동작하는 문제
+title: "fix: "
+labels: [bug]
+body:
+  - type: textarea
+    id: actual
+    attributes:
+      label: 현상
+      description: 무엇이 잘못 동작하나. 오류 응답이나 로그가 있으면 붙인다
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 방법
+      description: 요청 URL·파라미터 등 다시 일으키는 순서
+      placeholder: |
+        1. GET /api/menus/pick?lat=...&lng=...
+        2.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+    validations:
+      required: true
+  - type: dropdown
+    id: env
+    attributes:
+      label: 환경
+      options:
+        - 로컬
+        - 운영
+    validations:
+      required: true
