@@ -16,7 +16,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
+import com.menupick.domain.menu.exception.AllMenusExcludedException;
 import com.menupick.domain.menu.exception.NoNearbyRestaurantException;
+import com.menupick.domain.menu.model.MenuExclusions;
 import com.menupick.domain.menu.model.MenuPick;
 import com.menupick.domain.menu.service.MenuPickService;
 import com.menupick.domain.restaurant.exception.RestaurantLookupException;
@@ -38,7 +40,7 @@ class MenuPickControllerTest {
 	void 뽑힌_메뉴와_음식점을_돌려준다() {
 		Restaurant pyongyang = restaurant("평양면옥", "냉면", 210, new Coordinate(37.567, 126.979),
 				"http://place.map.kakao.com/1");
-		given(menuPickService.pick(HERE, "돈까스")).willReturn(new MenuPick("냉면", List.of(pyongyang)));
+		given(menuPickService.pick(HERE, "돈까스", MenuExclusions.NONE)).willReturn(new MenuPick("냉면", List.of(pyongyang)));
 
 		assertThat(mvc.get().uri("/api/menus/pick?lat=37.5665&lng=126.978&exclude=돈까스"))
 				.hasStatusOk()
@@ -59,9 +61,39 @@ class MenuPickControllerTest {
 
 	@Test
 	void 직전_메뉴_없이도_뽑는다() {
-		given(menuPickService.pick(HERE, null)).willReturn(new MenuPick("냉면", List.of()));
+		given(menuPickService.pick(HERE, null, MenuExclusions.NONE)).willReturn(new MenuPick("냉면", List.of()));
 
 		assertThat(mvc.get().uri("/api/menus/pick?lat=37.5665&lng=126.978")).hasStatusOk();
+	}
+
+	@Test
+	void 제외할_대분류와_메뉴를_반복_파라미터로_받는다() {
+		MenuExclusions exclusions = MenuExclusions.of(List.of("중식", "일식"), List.of("국밥"));
+		given(menuPickService.pick(HERE, null, exclusions)).willReturn(new MenuPick("냉면", List.of()));
+
+		assertThat(mvc.get().uri(
+				"/api/menus/pick?lat=37.5665&lng=126.978&excludeCuisine=중식&excludeCuisine=일식&excludeMenu=국밥"))
+				.hasStatusOk();
+	}
+
+	@Test
+	void 쉼표가_든_메뉴_이름을_쪼개지_않는다() {
+		MenuExclusions exclusions = MenuExclusions.of(List.of(), List.of("육류,고기"));
+		given(menuPickService.pick(HERE, null, exclusions)).willReturn(new MenuPick("냉면", List.of()));
+
+		assertThat(mvc.get().uri("/api/menus/pick").queryParam("lat", "37.5665").queryParam("lng", "126.978")
+				.queryParam("excludeMenu", "육류,고기"))
+				.hasStatusOk();
+	}
+
+	@Test
+	void 제외하고_남는_메뉴가_없으면_422() {
+		given(menuPickService.pick(any(), isNull(), any()))
+				.willThrow(new AllMenusExcludedException(MenuExclusions.NONE));
+
+		assertThat(mvc.get().uri("/api/menus/pick?lat=37.5665&lng=126.978&excludeCuisine=한식"))
+				.hasStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+				.hasContentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON);
 	}
 
 	@Test
@@ -80,7 +112,7 @@ class MenuPickControllerTest {
 
 	@Test
 	void 근처에_음식점이_없으면_404() {
-		given(menuPickService.pick(any(), isNull())).willThrow(new NoNearbyRestaurantException(HERE));
+		given(menuPickService.pick(any(), isNull(), any())).willThrow(new NoNearbyRestaurantException(HERE));
 
 		assertThat(mvc.get().uri("/api/menus/pick?lat=37.5665&lng=126.978"))
 				.hasStatus(HttpStatus.NOT_FOUND)
@@ -89,7 +121,7 @@ class MenuPickControllerTest {
 
 	@Test
 	void 음식점_조회에_실패하면_502() {
-		given(menuPickService.pick(any(), isNull()))
+		given(menuPickService.pick(any(), isNull(), any()))
 				.willThrow(new RestaurantLookupException("실패", null));
 
 		assertThat(mvc.get().uri("/api/menus/pick?lat=37.5665&lng=126.978"))

@@ -27,7 +27,7 @@ class MenuPickServiceTest {
 		MenuPickService service = new MenuPickService(coordinate -> List.of(pyongyang, katsu), new MenuPicker(),
 				new RestaurantSampler());
 
-		MenuPick pick = service.pick(HERE, "냉면");
+		MenuPick pick = service.pick(HERE, "냉면", MenuExclusions.NONE);
 
 		assertThat(pick).isEqualTo(new MenuPick("돈까스", List.of(katsu)));
 	}
@@ -62,7 +62,7 @@ class MenuPickServiceTest {
 				new RestaurantSampler());
 
 		assertThatExceptionOfType(NoNearbyRestaurantException.class)
-				.isThrownBy(() -> service.pick(HERE, null));
+				.isThrownBy(() -> service.pick(HERE, null, MenuExclusions.NONE));
 	}
 
 }

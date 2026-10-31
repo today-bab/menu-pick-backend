@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.menupick.domain.menu.exception.AllMenusExcludedException;
 import com.menupick.domain.menu.exception.NoNearbyRestaurantException;
 import com.menupick.domain.restaurant.exception.RestaurantLookupException;
 
@@ -23,6 +24,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler
 	ProblemDetail handle(NoNearbyRestaurantException ex) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "근처에 음식점이 없습니다.");
+	}
+
+	/** 요청 형식은 맞지만 그 조건으로는 뽑을 수 없어 422로 응답한다. 근처에 음식점이 없는 404와 안내를 구분한다. */
+	@ExceptionHandler
+	ProblemDetail handle(AllMenusExcludedException ex) {
+		return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, "제외한 메뉴를 빼면 근처에 뽑을 메뉴가 없습니다.");
 	}
 
 	@ExceptionHandler

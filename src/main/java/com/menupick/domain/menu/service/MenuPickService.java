@@ -28,10 +28,6 @@ public class MenuPickService {
 		this.restaurantSampler = restaurantSampler;
 	}
 
-	public MenuPick pick(Coordinate coordinate, @Nullable String excludedMenu) {
-		return pick(coordinate, excludedMenu, MenuExclusions.NONE);
-	}
-
 	/**
 	 * @param excludedMenu 직전에 뽑은 메뉴. 다른 후보가 있으면 다시 뽑지 않는다.
 	 * @param exclusions 사용자가 뺀 대분류·메뉴. 다른 후보가 없어도 반드시 뺀다.
