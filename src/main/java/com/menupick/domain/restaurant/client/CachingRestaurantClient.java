@@ -29,7 +29,11 @@ import com.menupick.domain.restaurant.model.Restaurant;
  */
 public class CachingRestaurantClient implements RestaurantClient {
 
-	public static final String CACHE_NAME = "nearby-restaurants";
+	/**
+	 * 저장하는 {@code Restaurant} 형식이 바뀌면 버전을 올려, 배포 직후 예전 형식의 캐시를 읽지 않게 한다.
+	 * ({@code application.properties}의 {@code spring.cache.cache-names}도 같이 바꾼다.)
+	 */
+	public static final String CACHE_NAME = "nearby-restaurants-v2";
 
 	public static final String ERRORS_METRIC = "restaurant.cache.errors";
 
