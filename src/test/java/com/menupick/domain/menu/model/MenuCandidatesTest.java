@@ -2,6 +2,7 @@ package com.menupick.domain.menu.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurantOf;
 
 import java.util.List;
 
@@ -34,6 +35,30 @@ class MenuCandidatesTest {
 	@Test
 	void 음식점이_없으면_후보도_비어_있다() {
 		assertThat(MenuCandidates.from(List.of()).isEmpty()).isTrue();
+		assertThat(MenuCandidates.from(List.of()).categories()).isEmpty();
+	}
+
+	@Test
+	void 메뉴를_가까운_순서대로_대분류별로_묶는다() {
+		MenuCandidates candidates = MenuCandidates.from(List.of(
+				restaurantOf("한식", "할매순대국", "국밥"),
+				restaurantOf("중식", "홍콩반점", "중식"),
+				restaurantOf("한식", "평양면옥", "냉면"),
+				restaurantOf("한식", "돼지국밥집", "국밥")));
+
+		assertThat(candidates.categories()).containsExactly(
+				new MenuCategory("한식", List.of("국밥", "냉면")),
+				new MenuCategory("중식", List.of("중식")));
+	}
+
+	@Test
+	void 여러_대분류에_걸친_메뉴는_가장_가까운_가게의_대분류에_넣는다() {
+		MenuCandidates candidates = MenuCandidates.from(List.of(
+				restaurantOf("간식", "빵집", "제과,베이커리"),
+				restaurantOf("카페", "베이커리카페", "제과,베이커리")));
+
+		assertThat(candidates.categories()).containsExactly(
+				new MenuCategory("간식", List.of("제과,베이커리")));
 	}
 
 }

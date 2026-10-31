@@ -19,6 +19,11 @@ public final class TestRestaurants {
 		return new Restaurant(name, menu, menu, distanceMeters, coordinate, placeUrl);
 	}
 
+	/** 대분류별로 묶거나 거르는 테스트에서 쓴다. */
+	public static Restaurant restaurantOf(String cuisine, String name, String menu) {
+		return new Restaurant(name, cuisine, menu, 100, ANYWHERE, "https://place/" + name);
+	}
+
 	public static Restaurant restaurant(String name, String menu, int distanceMeters) {
 		return restaurant(name, menu, distanceMeters, ANYWHERE, "https://place/" + name);
 	}
