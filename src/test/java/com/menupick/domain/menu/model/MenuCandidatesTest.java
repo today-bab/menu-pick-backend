@@ -1,19 +1,15 @@
 package com.menupick.domain.menu.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.menupick.domain.restaurant.model.Coordinate;
 import com.menupick.domain.restaurant.model.Restaurant;
 
 class MenuCandidatesTest {
-
-	private static Restaurant restaurant(String name, String menu, int distanceMeters) {
-		return new Restaurant(name, menu, distanceMeters, new Coordinate(37.5, 127), "https://place/" + name);
-	}
 
 	@Test
 	void 음식점을_메뉴별로_묶는다() {

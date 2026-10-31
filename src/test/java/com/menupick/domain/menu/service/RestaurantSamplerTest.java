@@ -1,6 +1,7 @@
 package com.menupick.domain.menu.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.util.Comparator;
 import java.util.List;
@@ -9,7 +10,6 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
-import com.menupick.domain.restaurant.model.Coordinate;
 import com.menupick.domain.restaurant.model.Restaurant;
 
 class RestaurantSamplerTest {
@@ -17,8 +17,7 @@ class RestaurantSamplerTest {
 	/** 거리 10m, 20m, … 인 냉면집 {@code count}곳 (가까운 순). */
 	private static List<Restaurant> restaurants(int count) {
 		return IntStream.rangeClosed(1, count)
-				.mapToObj(i -> new Restaurant("냉면집" + i, "냉면", i * 10, new Coordinate(37.5, 127),
-						"https://place/" + i))
+				.mapToObj(i -> restaurant("냉면집" + i, "냉면", i * 10))
 				.toList();
 	}
 

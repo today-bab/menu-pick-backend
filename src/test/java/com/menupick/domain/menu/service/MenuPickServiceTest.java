@@ -2,6 +2,7 @@ package com.menupick.domain.menu.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.util.List;
 
@@ -15,10 +16,6 @@ import com.menupick.domain.restaurant.model.Restaurant;
 class MenuPickServiceTest {
 
 	private static final Coordinate HERE = new Coordinate(37.5665, 126.978);
-
-	private static Restaurant restaurant(String name, String menu) {
-		return new Restaurant(name, menu, 100, HERE, "https://place/" + name);
-	}
 
 	@Test
 	void 근처_음식점에서_직전_메뉴를_빼고_뽑는다() {

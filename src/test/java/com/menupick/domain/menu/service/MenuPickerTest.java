@@ -2,6 +2,7 @@ package com.menupick.domain.menu.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.util.List;
 import java.util.random.RandomGenerator;
@@ -10,14 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import com.menupick.domain.menu.model.MenuCandidates;
 import com.menupick.domain.menu.model.MenuPick;
-import com.menupick.domain.restaurant.model.Coordinate;
 import com.menupick.domain.restaurant.model.Restaurant;
 
 class MenuPickerTest {
-
-	private static Restaurant restaurant(String name, String menu) {
-		return new Restaurant(name, menu, 100, new Coordinate(37.5, 127), "https://place/" + name);
-	}
 
 	private static final Restaurant PYONGYANG = restaurant("평양면옥", "냉면");
 	private static final Restaurant KATSU = restaurant("카츠정", "돈까스");

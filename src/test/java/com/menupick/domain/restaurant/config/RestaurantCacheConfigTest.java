@@ -1,6 +1,7 @@
 package com.menupick.domain.restaurant.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -14,15 +15,13 @@ import org.springframework.data.redis.cache.RedisCacheManager.RedisCacheManagerB
 import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
 
 import com.menupick.domain.restaurant.client.CachingRestaurantClient;
-import com.menupick.domain.restaurant.model.Coordinate;
 import com.menupick.domain.restaurant.model.Restaurant;
 
 import tools.jackson.databind.json.JsonMapper;
 
 class RestaurantCacheConfigTest {
 
-	private static final List<Restaurant> RESTAURANTS = List.of(
-			new Restaurant("평양면옥", "냉면", 100, new Coordinate(37.567, 126.979), "http://place.map.kakao.com/1"));
+	private static final List<Restaurant> RESTAURANTS = List.of(restaurant("평양면옥", "냉면"));
 
 	private final RedisCacheManagerBuilder builder = RedisCacheManager.builder()
 			.withCacheConfiguration(CachingRestaurantClient.CACHE_NAME,
