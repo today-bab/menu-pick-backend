@@ -8,7 +8,8 @@ on:
 permissions: {}
 
 jobs:
-  check:
+  # main 룰셋의 필수 체크 이름이라 바꾸면 룰셋도 같이 고친다
+  conventions:
     runs-on: ubuntu-latest
     steps:
       - name: 규칙 검사
