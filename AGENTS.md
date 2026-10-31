@@ -12,6 +12,9 @@
 | [docs/git-conventions.md](docs/git-conventions.md) | 이슈·브랜치·커밋·PR·머지 규칙. **코드를 바꾸기 전에 반드시 읽는다** |
 | [loadtest/README.md](loadtest/README.md) | 부하 테스트 실행 방법과 측정 결과 |
 | [.github/workflows/ci.yml](.github/workflows/ci.yml) | CI 단계(테스트 → 이미지 → gitops 배포) |
+| [.github/workflows/conventions.yml](.github/workflows/conventions.yml) | PR의 브랜치 이름·제목·`Closes #N` 검사 |
+| [.github/ISSUE_TEMPLATE/](.github/ISSUE_TEMPLATE) | 이슈를 만들 때 쓰는 기능·버그 템플릿 |
+| [.github/pull_request_template.md](.github/pull_request_template.md) | PR 본문 템플릿 |
 
 ## 관련 저장소
 
