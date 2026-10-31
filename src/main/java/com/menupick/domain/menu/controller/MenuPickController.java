@@ -31,6 +31,7 @@ public class MenuPickController {
 	 * 현재 위치 근처 음식점에서 메뉴를 하나 뽑는다.
 	 * <p>
 	 * 제외할 대분류·메뉴는 {@code excludeCuisine=중식&excludeCuisine=일식&excludeMenu=국밥}처럼 같은 이름을 반복해 받는다.
+	 * 대분류를 뺐어도 다시 넣을 메뉴는 {@code excludeCuisine=한식&includeMenu=국밥}처럼 받는다.
 	 *
 	 * @param exclude 직전에 뽑은 메뉴
 	 */
@@ -42,7 +43,8 @@ public class MenuPickController {
 			WebRequest request) {
 		MenuExclusions exclusions = MenuExclusions.of(
 				parameterValues(request, "excludeCuisine"),
-				parameterValues(request, "excludeMenu"));
+				parameterValues(request, "excludeMenu"),
+				parameterValues(request, "includeMenu"));
 		return MenuPickResponse.from(menuPickService.pick(new Coordinate(lat, lng), exclude, exclusions));
 	}
 

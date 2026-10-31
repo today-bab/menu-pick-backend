@@ -77,6 +77,16 @@ class MenuPickControllerTest {
 	}
 
 	@Test
+	void 대분류를_빼도_다시_넣을_메뉴를_반복_파라미터로_받는다() {
+		MenuExclusions exclusions = MenuExclusions.of(List.of("한식"), List.of(), List.of("국밥", "냉면"));
+		given(menuPickService.pick(HERE, null, exclusions)).willReturn(new MenuPick("국밥", List.of()));
+
+		assertThat(mvc.get().uri(
+				"/api/menus/pick?lat=37.5665&lng=126.978&excludeCuisine=한식&includeMenu=국밥&includeMenu=냉면"))
+				.hasStatusOk();
+	}
+
+	@Test
 	void 쉼표가_든_메뉴_이름을_쪼개지_않는다() {
 		MenuExclusions exclusions = MenuExclusions.of(List.of(), List.of("육류,고기"));
 		given(menuPickService.pick(HERE, null, exclusions)).willReturn(new MenuPick("냉면", List.of()));
