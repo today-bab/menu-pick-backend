@@ -2,6 +2,7 @@ package com.menupick.domain.restaurant.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +18,7 @@ import com.menupick.domain.restaurant.model.Restaurant;
 
 class CachingRestaurantClientTest {
 
-	private static final Restaurant PYONGYANG = new Restaurant("평양면옥", "냉면", 100,
-			new Coordinate(37.567, 126.979), "http://place.map.kakao.com/1");
+	private static final Restaurant PYONGYANG = restaurant("평양면옥", "냉면");
 
 	/** 받은 좌표를 기록하는 가짜 클라이언트. */
 	private static class RecordingClient implements RestaurantClient {

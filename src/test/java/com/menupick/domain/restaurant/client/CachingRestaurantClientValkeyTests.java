@@ -2,6 +2,7 @@ package com.menupick.domain.restaurant.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static com.menupick.domain.restaurant.model.TestRestaurants.restaurant;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -41,8 +42,7 @@ class CachingRestaurantClientValkeyTests {
 	static final GenericContainer<?> valkey = new GenericContainer<>("valkey/valkey:9.1.2-alpine")
 			.withExposedPorts(6379);
 
-	private static final Restaurant PYONGYANG = new Restaurant("평양면옥", "냉면", 100,
-			new Coordinate(37.567, 126.979), "http://place.map.kakao.com/1");
+	private static final Restaurant PYONGYANG = restaurant("평양면옥", "냉면");
 
 	private static final String CELL_KEY = CachingRestaurantClient.CACHE_NAME + "::"
 			+ new Coordinate(37.567, 126.978);
