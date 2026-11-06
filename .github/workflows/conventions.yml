@@ -19,6 +19,8 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
           BODY: ${{ github.event.pull_request.body }}
           TYPES: feat|fix|refactor|test|docs|chore|ci|build
+          # PR 제목에 쓰는 타입 표기. 브랜치 타입과 순서를 맞춘다
+          TITLE_TYPES: Feat|Fix|Refactor|Test|Docs|Chore|CI|Build
         run: |
           failed=0
 
@@ -27,8 +29,8 @@ jobs:
             failed=1
           fi
 
-          if [[ ! "$TITLE" =~ ^($TYPES):\ .+ ]]; then
-            echo "::error::PR 제목이 '<타입>: <요약>' 형식이 아닙니다: $TITLE"
+          if [[ ! "$TITLE" =~ ^\[($TITLE_TYPES)\]\ .+ ]]; then
+            echo "::error::PR 제목이 '[<타입>] <요약>' 형식이 아닙니다 (예: [Feat] 뽑기 API에 includeMenu 받기): $TITLE"
             failed=1
           fi
 
